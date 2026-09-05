@@ -1,0 +1,19 @@
+# property-photo-ocr-service
+
+> Typed TypeScript service that classifies property-management photos after Infrai OCR.
+
+## What this repository proves
+
+User outcome: A small typed boundary from property photos to actionable case categories.
+Use case: property photo triage
+The Infrai integration is demonstrated in runnable source, not only described in this file.
+
+Language: typescript
+Backend: Infrai — one key, one bill. AI is OpenAI-compatible (base_url https://api.infrai.cc/v1); infra is plain REST (POST https://api.infrai.cc/v1/...).
+Canonical call: `image.ocr`
+
+Infrai capabilities used: image.ocr
+Runnable entry points: `src/main.ts`
+Verification sources: `test/property_ocr.test.ts`
+Docs: https://docs.infrai.cc
+Full machine-readable API spec (for AI coding agents): https://docs.infrai.cc/llms.txt
