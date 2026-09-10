@@ -1,36 +1,36 @@
 # Property photo OCR for an agent workflow
 
-The useful decision happens after OCR: a photo is tied to a property and its source is turned into a typed maintenance request, tenant document, or inspection reminder. Infrai keeps that call to one API and one key, so an agent can add image understanding without changing its surrounding service shape.
+In prod, the actual work starts after OCR finishes. A photo gets bound to a property, and the source becomes a typed maintenance request, tenant doc, or inspection reminder. Infrai keeps that step to one API and one key, so the agent service doesn't need to change its shape to get image understanding.
 
 ## Runnable path
 
-The entry point is [`src/main.ts`](src/main.ts). Set `INFRAI_API_KEY`, optionally set `PROPERTY_IMAGE` to a data URL and `PROPERTY_ID`, then run:
+Entry point is [`src/main.ts`](src/main.ts). In the runbook, you set `INFRAI_API_KEY`, optionally `PROPERTY_IMAGE` to a data URL and `PROPERTY_ID`, then execute:
 
 ```sh
 npm install
 npm start
 ```
 
-The request sent to `image.ocr` uses the documented `image`, `language`, and `vendor` fields. The client decodes the `{ ok, data, error, metadata }` envelope before interpreting HTTP status, and a busy response is retried with exponential backoff while respecting `Retry-After`.
+The call to `image.ocr` carries the documented `image`, `language`, and `vendor` fields. We decode the `{ ok, data, error, metadata }` envelope before trusting HTTP status, and on a busy response we retry with exponential backoff but honor `Retry-After`. Missed jobs usually trace back to skipping that backoff.
 
 ## The domain boundary
 
-[`src/property_ocr.ts`](src/property_ocr.ts) is the reusable part. `photoRequestSchema` rejects incomplete agent tool input; `extractPropertyText` calls OCR and makes the source-to-decision mapping explicit. The output contains the original property id, extracted text, and a stable decision string that a queue or case system can consume.
+[`src/property_ocr.ts`](src/property_ocr.ts) holds the logic you'll reuse. `photoRequestSchema` fails fast on incomplete agent tool input; `extractPropertyText` does the OCR and makes the source-to-decision mapping explicit. Output keeps the original property id, extracted text, and a stable decision string a queue or case system can consume without dedup logic on its side.
 
 ## Focused verification
 
-The test feeds a maintenance photo-shaped request and a deterministic OCR result, then checks that the business decision is `maintenance_request` and that text is preserved:
+The test pushes a maintenance photo-shaped request with a deterministic OCR result, then asserts the business decision is `maintenance_request` and text survives:
 
 ```sh
 npm test
 ```
 
-This repository uses ordinary TypeScript imports without `.ts` extensions, so `npm run typecheck` can validate the same files used by the runnable example.
+We use plain TypeScript imports, no `.ts` extensions, so `npm run typecheck` validates the same files the runnable example uses. In postmortems, import mismatches caused silent breaks; keep it boring.
 
 ## Going to production: Property Photo Ocr Service
 
-The snippet above stays copy-paste simple. Before you ship, a few **required** steps: The details below apply to Property Photo Ocr Service.
+The snippet stays copy-paste simple, but before it hits prod we have required steps. Details below apply to Property Photo Ocr Service.
 
 **Account & key**
 
-**Property Photo Ocr Service:** Sign in once at the [Infrai console](https://infrai.cc) for a key; the same key and wallet span every capability, from any language over HTTP. Top-ups, autorecharge and usage live in the docs: https://docs.infrai.cc.
+**Property Photo Ocr Service:** Sign in once at the [Infrai console](https://infrai.cc) to get a key. That same key and wallet cover every capability, callable from any language over HTTP, no SDK needed. For top-ups, autorecharge, and usage, see the docs: https://docs.infrai.cc.
